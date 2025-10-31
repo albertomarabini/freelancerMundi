@@ -988,7 +988,7 @@ export default class OptyDetailsDrawer extends React.Component<Props, State> {
             {this.state.tab === 1 ? this.renderContactsTab(row) : null}
             {this.state.tab === 2 ? this.renderDeadlinesTab() : null}
             {this.state.tab === 3 ? this.renderTextEditor(row) : null}
-            {this.state.tab === 3 && (row.platform === 'MockMarket') ? this.renderMockMarketToolsTab(row) : null}
+            {this.state.tab === 4 && (row.platform === 'MockMarket') ? this.renderMockMarketToolsTab(row) : null}
           </Box>
         </Drawer>
         <Dialog open={this.state.deleteStep === 1} onClose={() => this.cancelDelete()}>
