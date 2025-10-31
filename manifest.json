@@ -5,12 +5,12 @@
     "action": {
       "default_title": "freelancerMundi"
     },
-    "key": "gjgoephgfbpdpkleaandaccbbckcookl",
+    "key": "MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCi0ncuGD7aviv5kQVM1uPsRAaZpogeQ+EyoKhIG9Vr02jKzNKQaueABjCCIQ9XqOJ0XryHN+ylH9KMmfeT1lZbornkCMEs17LGhIkC24n8sn/bjwkr54vD6oEkWM6Jtvr97rb5rJw942XWSk2jbIQ4vOiGBwfSDs93XB7oUqn8ExlddyONqTUyIXq1U2YFsXlgTn2Z3eDX9iR0z3gc+E+/wlENMO03MeDbYtG5OefExaIaCZMJSM02HpB5IfbJ0KY5pGCjP4HACc72se4cX1ga3NQJb7uzKx2gQ5AurYcSNEpaczJ4W90VV2icuTfQFMeZbZiEIhr7DLVE3SUkL2n1AgMBAAECggEACYiLsF/8jCe+4OewGQHrCfoorcXtqeH9FU8JU2GH0z6nX9pyyMBtqhYSsIfZg18w1TH31W39leSBWjiooZgW6dojCrpFf0fo4I1BjXCHyYs1B8i993tg+FlqctOdUjxrwUMBJSjJZClEnPGwTo2Lx1uuPKy8NT0nQhybdaxjZg4rS8L7b+grKac821MP5gLtedHP9cZqlxBT3SSs7sraJRfMz1pyfjI6ryWhrDX65jpeI03i1AAnM0DjSf/oa9ET8F+ajkxzS+nQ5sPL46D1Hq3ra2fEB0DXfyJqZCkmxLh2wcp4KOqSC2EU0VnyoFvUE+CpWzeqScys5A/+u51EOQKBgQDVBgBf5bsNkTg8ndXO+sIdYtsMd+aa9X+j3kfkE4Uz6jwTLjsh3o8x4MvnMtCQJZRur0ObB+5WznGlu1afdFBzDtWkvW9NqFYJp0gfetLpw5q/Ny/RldgwV9FNa3r4dzCUKTZJj9aOe9idWBWileNWNnmdfpbPxi9iUg1NB0szSQKBgQDDq7juhwQuvtsZMcxU366p8jC5upVcorTAb4hKVhXlalnu3u0htxabm0iWtXflNZlIyZ97fYbhhXDfAdRz9MgVlSXEhu2ih+ADyGuMUmbwBkwqUKT9xwENNRrhPNCoiFoxGMFboaNQgRpPFWu6TNN/Ha//5l7PwPehUnRkcHwVTQKBgBZ0N33kPT9E22SoTm0uyV9HmEdMLCaRUg730yQbWqMKQaLT8K+1QerEAzovhQRssaSpHLsurtS/lgMeKBdOr1wxaBuhTCYnZEpIM7X9wFWbpKgbLRMudEdEOm+qsJ+YEKrNXUeLvdXu//o12rH0kq33uAH94e+suDno5DYGWsrhAoGAN6oejhzy36mEAwLbsjmAIvC3U970psnSyfvwtdUPnZhHxWC97R183P+sAtPVK+u3k7FoIWVwfa/MkGSg3+v/D8TCXcpUyCwHWowlrGG0zwu7lz4h8eAvOGanIvR+F7PSlK0KNNsi7sALj/v0DafVcxArBY2v40JuMAKZAgnOAvECgYBF6YrdHXFxbiEfYhrSDiFuPsBoPi1KfF3hEvjFQT7ZBG5OSHOkweFwiyEJUgaZ47MhGfw9Xpv5dIYpMDQTwKCn1rhyzseomDIdqVuc5oGJxzZi497ySEanE/sv9McSyuDPsp1Fl0zpmShPVFt75fTjbaTIO1u3IFmDJcepKDA/7Q==",
     "background": { "service_worker": "sw.js" },
     "permissions": ["alarms", "sidePanel", "storage", "contextMenus", "scripting", "activeTab", "tabs", "identity", "windows"],
     "content_security_policy": {
         "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://apis.google.com https://www.googleapis.com https://www.gstatic.com https://securetoken.googleapis.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com"
-      },
+    },
     "content_scripts": [{
         "matches": ["https://*/*", "http://*/*"],
         "js": ["page_connector.js"],

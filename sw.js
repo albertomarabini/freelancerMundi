@@ -8,6 +8,23 @@ const REM_KEY = 'REM_V1';
 const POP_URL = chrome.runtime.getURL('reminders.html');
 const GRACE_MS = 20 * 60 * 1000;
 const HEARTBEAT_MIN = 0.5;
+const GOOGLE_SCOPES = ["openid","email","profile","https://www.googleapis.com/auth/calendar"];
+
+/* ===== Internals ===== */
+// Function to set the panel behavior
+function setupSidePanel() {
+  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((error) => {
+    console.error("Error setting side panel behavior:", error);
+  });
+}
+
+// Call the function when the service worker initializes (e.g., on extension startup)
+setupSidePanel();
+
+// You can also use the chrome.runtime.onInstalled listener
+chrome.runtime.onInstalled.addListener(() => {
+  setupSidePanel();
+});
 /* ===== Runtime state ===== */
 let popupWindowId = null;
 
@@ -265,6 +282,40 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       sendResponse({ ok: true, access_token: authCache.google_accessToken, expires_at: authCache.google_accessExpiry });
       return true;
     }
+    if (msg.type === "auth/clear") {
+      try {
+        await clearAuthInStorage();
+        authCache = null;
+        console.info("[auth] cache cleared by message");
+        sendResponse({ ok: true });
+      } catch (e) {
+        sendResponse({ ok: false, error: String(e?.message || e) });
+      }
+      return true;
+    }
+
+    if (msg.type === "calendar/debugList") {
+      try {
+        const data = await gApi("calendar.users.me.calendarList", async (a) => {
+          const r = await fetch("https://www.googleapis.com/calendar/v3/users/me/calendarList", {
+            headers: { Authorization: `Bearer ${a.google_accessToken}` }
+          });
+          if (!r.ok) {
+            let reason = `HTTP ${r.status}`;
+            try { reason = (await r.json())?.error?.message || reason; } catch {}
+            throw new Error(reason);
+          }
+          return r.json();
+        });
+        // Optional: also dump token scopes so you see what's actually granted
+        await _debugTokenInfo((await ensureAuth()).google_accessToken);
+        sendResponse({ ok: true, data });
+      } catch (e) {
+        sendResponse({ ok: false, error: String(e?.message || e) });
+      }
+      return true;
+    }
+
 
     /* ====== REMINDER ROUTES ====== */
     if (msg.type === 'rem/addMany') {
@@ -342,10 +393,23 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
    EXISTING AUTH / FIREBASE / HELPERS (unchanged below this line, minus the initial badge demo)
 ========================================================================================= */
 
+async function gApi(label, fn) {
+  try {
+    return await withAuthRetry(async (a) => {
+      const res = await fn(a);
+      return res;
+    });
+  } catch (err) {
+    console.error(`[API FAIL] ${label}`, err);
+    throw err;
+  }
+}
+
+
 async function googleOAuth(
-  scopes = ["openid","email","profile","https://www.googleapis.com/auth/calendar"]
+  scopes = GOOGLE_SCOPES
 ) {
-  const redirectUri = `https://${chrome.runtime.id}.chromiumapp.org/`;
+  const redirectUri = chrome.identity.getRedirectURL();
   const nonce = crypto.getRandomValues(new Uint32Array(4)).join('-');
 
   const makeUrl = (prompt) => {
@@ -360,24 +424,49 @@ async function googleOAuth(
     return u.toString();
   };
 
-  // 1) silent
+  // 1) silent (may return a URL with error=interaction_required)
   let responseUrl = await chrome.identity
     .launchWebAuthFlow({ url: makeUrl('none'), interactive: false })
     .catch(() => null);
 
-  // 2) interactive fallback
+  // If silent returned an error like interaction_required/login_required/consent_required,
+  // treat it as "no result" so we fall back to interactive.
+  if (responseUrl) {
+    const u = new URL(responseUrl);
+    const hashParams = new URLSearchParams(u.hash.startsWith('#') ? u.hash.slice(1) : u.hash);
+    const queryParams = new URLSearchParams(u.search);
+    const err = hashParams.get('error') || queryParams.get('error');
+    if (err && /interaction_required|login_required|consent_required|account_selection_required/i.test(err)) {
+      responseUrl = null;
+    }
+  }
+
+  // 2) interactive fallback (force an account picker and consent if needed)
   if (!responseUrl) {
     responseUrl = await chrome.identity.launchWebAuthFlow({
-      url: makeUrl('select_account'),
+      url: makeUrl('select_account consent'),
       interactive: true
     });
   }
 
-  const params = new URLSearchParams(new URL(responseUrl).hash.substring(1));
+  const urlObj = new URL(responseUrl);
+  const frag = urlObj.hash.startsWith('#') ? urlObj.hash.slice(1) : urlObj.hash;
+  const params = new URLSearchParams(frag);
+
+  // capture errors (sometimes Google returns them in hash, sometimes query)
+  const err = params.get('error') || new URLSearchParams(urlObj.search).get('error');
+  const errDesc = params.get('error_description') || new URLSearchParams(urlObj.search).get('error_description');
+
   const id_token = params.get('id_token');
   const access_token = params.get('access_token');
   const expires_in = Number(params.get('expires_in') || '0');
-  if (!id_token) throw new Error('No id_token returned');
+
+  if (err) {
+    throw new Error(`OAuth error: ${err}${errDesc ? ` - ${errDesc}` : ''}`);
+  }
+  if (!id_token) {
+    throw new Error('No id_token returned (check redirect_uri, test-user status, or org policy).');
+  }
 
   return {
     id_token,
@@ -387,7 +476,7 @@ async function googleOAuth(
 }
 
 async function firebaseSignInWithGoogleIdToken(id_token) {
-  const requestUri = `https://${chrome.runtime.id}.chromiumapp.org/`;
+  const requestUri = chrome.identity.getRedirectURL();
   const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=${FB.apiKey}`;
   const body = {
     postBody: `id_token=${encodeURIComponent(id_token)}&providerId=google.com`,
@@ -406,7 +495,7 @@ async function firebaseSignInWithGoogleIdToken(id_token) {
 
 // Google → Firebase sign-in for Chrome Extension
 async function getGoogleIdTokenViaWebAuthFlow() {
-  const redirectUri = `https://${chrome.runtime.id}.chromiumapp.org/`;
+  const redirectUri = chrome.identity.getRedirectURL();
   const nonce = crypto.getRandomValues(new Uint32Array(4)).join('-');
 
   const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
@@ -430,8 +519,8 @@ async function getGoogleIdTokenViaWebAuthFlow() {
   return idToken;
 }
 
-async function googleOAuthForceConsent(scopes = ["openid","email","profile","https://www.googleapis.com/auth/calendar"]) {
-  const redirectUri = `https://${chrome.runtime.id}.chromiumapp.org/`;
+async function googleOAuthForceConsent(scopes = GOOGLE_SCOPES) {
+  const redirectUri = chrome.identity.getRedirectURL();
   const nonce = crypto.getRandomValues(new Uint32Array(4)).join('-');
   const u = new URL('https://accounts.google.com/o/oauth2/v2/auth');
   u.searchParams.set('client_id', GOOGLE_WEB_CLIENT_ID);
@@ -454,7 +543,7 @@ async function signInWithGoogle() {
   const idToken = await getGoogleIdTokenViaWebAuthFlow();
 
   // Exchange with Firebase using the ID token (not access token)
-  const requestUri = `https://${chrome.runtime.id}.chromiumapp.org/`;
+  const requestUri = chrome.identity.getRedirectURL();
   const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=${FB.apiKey}`;
   const body = {
     postBody: `id_token=${encodeURIComponent(idToken)}&providerId=google.com`,
@@ -491,31 +580,90 @@ async function writeAuthToStorage(a){ try { await chrome.storage.local.set({ [AU
 async function clearAuthInStorage(){ try { await chrome.storage.local.remove(AUTH_KEY); } catch {} }
 async function ensureAuth() {
   if (_ensureAuthTask) return _ensureAuthTask;
+
   _ensureAuthTask = (async () => {
+    // 1) Hot cache in-memory
     if (authCache && authCache.firebase_idToken && authCache.google_accessToken && Date.now() < (authCache.google_accessExpiry || 0)) {
       return authCache;
     }
+
+    // 2) Cached on disk
     const cached = await readAuthFromStorage();
     if (cached && cached.firebase_idToken && cached.google_accessToken && Date.now() < (cached.google_accessExpiry || 0)) {
-      authCache = cached; return authCache;
+      try {
+        await _assertScopes(cached.google_accessToken, ["https://www.googleapis.com/auth/calendar"]);
+        authCache = cached;
+        return authCache;
+      } catch (e) {
+        console.warn("[auth] Cached token missing Calendar scope. Forcing consent...", e?.message || e);
+        const g2 = await googleOAuthForceConsent();
+        const f2 = await firebaseSignInWithGoogleIdToken(g2.id_token);
+        authCache = {
+          uid: f2.uid, email: f2.email, name: f2.name,
+          firebase_idToken: f2.firebase_idToken,
+          google_accessToken: g2.access_token || null,
+          google_accessExpiry: g2.access_expiry || 0,
+          firebase_refreshToken: f2.refreshToken || null
+        };
+        await writeAuthToStorage(authCache);
+        return authCache;
+      }
     }
-    const g = await googleOAuth();
+
+    // 3) Fresh sign-in
+    const g = await googleOAuth();                         // id_token + access_token (maybe)
     const f = await firebaseSignInWithGoogleIdToken(g.id_token);
+
     authCache = {
-      uid: f.uid,
-      email: f.email,
-      name: f.name,
+      uid: f.uid, email: f.email, name: f.name,
       firebase_idToken: f.firebase_idToken,
       google_accessToken: g.access_token || null,
       google_accessExpiry: g.access_expiry || 0,
       firebase_refreshToken: f.refreshToken || null
     };
+
+    // 3a) If access token missing, force consent once
+    if (!authCache.google_accessToken) {
+      console.warn("[auth] No access token from googleOAuth; forcing consent...");
+      const g2 = await googleOAuthForceConsent();
+      const f2 = await firebaseSignInWithGoogleIdToken(g2.id_token);
+      authCache = {
+        uid: f2.uid, email: f2.email, name: f2.name,
+        firebase_idToken: f2.firebase_idToken,
+        google_accessToken: g2.access_token || null,
+        google_accessExpiry: g2.access_expiry || 0,
+        firebase_refreshToken: f2.refreshToken || null
+      };
+      await writeAuthToStorage(authCache);
+      return authCache;
+    }
+
+    // 3b) Ensure Calendar scope; if missing, force consent once
+    try {
+      await _assertScopes(authCache.google_accessToken, ["https://www.googleapis.com/auth/calendar"]);
+    } catch (e) {
+      console.warn("[auth] Fresh token missing Calendar scope. Forcing consent...", e?.message || e);
+      const g2 = await googleOAuthForceConsent();
+      const f2 = await firebaseSignInWithGoogleIdToken(g2.id_token);
+      authCache = {
+        uid: f2.uid, email: f2.email, name: f2.name,
+        firebase_idToken: f2.firebase_idToken,
+        google_accessToken: g2.access_token || null,
+        google_accessExpiry: g2.access_expiry || 0,
+        firebase_refreshToken: f2.refreshToken || null
+      };
+      await writeAuthToStorage(authCache);
+      return authCache;
+    }
+
     await writeAuthToStorage(authCache);
     return authCache;
   })();
+
   try { return await _ensureAuthTask; }
   finally { _ensureAuthTask = null; }
 }
+
 
 function isAuthStatus(err) {
   const s = err && (err.status || err.code);
@@ -558,6 +706,36 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   // (The additional listener above already handles everything; we keep this no-op to avoid removing your structure)
   return true;
 });
+
+// --- DEBUG: inspect Google access_token scopes & audience ---
+async function _debugTokenInfo(accessToken) {
+  try {
+    const r = await fetch(
+      `https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${encodeURIComponent(accessToken)}`
+    );
+    const j = await r.json();
+    // Example: j.scope: "openid email https://www.googleapis.com/auth/calendar"
+    console.info("[oauth] tokeninfo:", {
+      scope: j.scope, aud: j.aud, exp: j.exp, alg: j.alg
+    });
+    const scopes = (j.scope || "").split(" ").filter(Boolean);
+    return { scopes, aud: j.aud || null };
+  } catch (e) {
+    console.warn("[oauth] tokeninfo failed:", e?.message || e);
+    return { scopes: [], aud: null };
+  }
+}
+
+async function _assertScopes(accessToken, requiredScopes) {
+  const { scopes } = await _debugTokenInfo(accessToken);
+  const missing = requiredScopes.filter(s => !scopes.includes(s));
+  if (missing.length) {
+    throw new Error("INSUFFICIENT_SCOPES: " + missing.join(", "));
+  }
+}
+
+
+
 
 /* ---------- Firestore helpers (unchanged) ---------- */
 // Get full document names for all messages in a chat

@@ -9,6 +9,8 @@ import { openPipelineDrawer, closePipelineDrawer } from './build/pipelinedrawer.
 import { initPipeline } from './build/pipeline.bundle.js';
 import { AIClient } from './build/aiclient.bundle.js';
 
+chrome.runtime.sendMessage({ type: "auth/clear" }, console.log);
+
 const tabMoreBtn = document.getElementById('tab-more');
 const tabSettingsBtn = document.getElementById('tab-settings');
 
