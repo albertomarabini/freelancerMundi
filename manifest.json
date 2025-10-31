@@ -1,0 +1,45 @@
+{
+    "manifest_version": 3,
+    "name": "freelancerMundi",
+    "version": "0.0.1",
+    "action": {
+      "default_title": "freelancerMundi"
+    },
+    "key": "gjgoephgfbpdpkleaandaccbbckcookl",
+    "background": { "service_worker": "sw.js" },
+    "permissions": ["alarms", "sidePanel", "storage", "contextMenus", "scripting", "activeTab", "tabs", "identity", "windows"],
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' https://apis.google.com https://www.googleapis.com https://www.gstatic.com https://securetoken.googleapis.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com"
+      },
+    "content_scripts": [{
+        "matches": ["https://*/*", "http://*/*"],
+        "js": ["page_connector.js"],
+        "run_at": "document_idle",
+        "all_frames": true
+    }],
+    "icons": {
+      "16":  "/public/icons/icon16.png",
+      "32":  "/public/icons/icon32.png",
+      "48":  "/public/icons/icon48.png",
+      "128": "/public/icons/icon128.png"
+    },
+    "host_permissions": [
+        "http://*/*",
+        "https://*/*",
+        "https://identitytoolkit.googleapis.com/*",
+        "https://securetoken.googleapis.com/*",
+        "https://firestore.googleapis.com/*",
+        "https://www.googleapis.com/*",
+        "https://apis.google.com/*",
+        "https://www.gstatic.com/*"
+    ],
+    "side_panel": { "default_path": "panel.html" },
+    "trial_tokens":[
+        "AsMlBoUNIDURztU9+Prb4PXSa2Vagik3wEQx7A7vyuPrlQ+T8PVXu3glloFecCnVYeiGXS82R9VYZ8HrX1/Irg0AAAB7eyJvcmlnaW4iOiJjaHJvbWUtZXh0ZW5zaW9uOi8vZ2pnb2VwaGdmYnBkcGtsZWFhbmRhY2NiYmNrY29va2wiLCJmZWF0dXJlIjoiQUlQcm9tcHRBUElNdWx0aW1vZGFsSW5wdXQiLCJleHBpcnkiOjE3NzQzMTA0MDB9",
+        "A1RwfPlrVX4z3yqFNbVNZVHduDRfN1qfzFBphomsDhdhxMz4CTGmQ8UUffopF3C0IYMFcV3B6zX254QJTS9DAQ8AAACFeyJvcmlnaW4iOiJjaHJvbWUtZXh0ZW5zaW9uOi8vZ2pnb2VwaGdmYnBkcGtsZWFhbmRhY2NiYmNrY29va2wiLCJmZWF0dXJlIjoiQUlQcm9vZnJlYWRlckFQSSIsImV4cGlyeSI6MTc3OTE0ODgwMCwiaXNUaGlyZFBhcnR5Ijp0cnVlfQ==",
+        "A8nbTGPlzRm635R8gVMM3IdCjcsNv+ECXozfQuUjZTLPqxPToI1TWJMuGxhxmRC00Qe8d8g/iZs7+gcE1NNvXwgAAACCeyJvcmlnaW4iOiJjaHJvbWUtZXh0ZW5zaW9uOi8vZ2pnb2VwaGdmYnBkcGtsZWFhbmRhY2NiYmNrY29va2wiLCJmZWF0dXJlIjoiQUlSZXdyaXRlckFQSSIsImV4cGlyeSI6MTc2OTQ3MjAwMCwiaXNUaGlyZFBhcnR5Ijp0cnVlfQ==",
+        "A1tabkppOCoUqHRQuV2DI6aDa4resOWEciWSmcJrLsYjP3v0y7BjwdoC7tjpXL65BAczooEApQ1+sbsT0t3ySgIAAACAeyJvcmlnaW4iOiJjaHJvbWUtZXh0ZW5zaW9uOi8vZ2pnb2VwaGdmYnBkcGtsZWFhbmRhY2NiYmNrY29va2wiLCJmZWF0dXJlIjoiQUlXcml0ZXJBUEkiLCJleHBpcnkiOjE3Njk0NzIwMDAsImlzVGhpcmRQYXJ0eSI6dHJ1ZX0="
+
+      ]
+  }
+

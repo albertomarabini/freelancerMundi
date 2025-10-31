@@ -1,0 +1,168 @@
+/* mui.skin.capture.css — scoped MUI-look for the Capture tab only */
+:root{
+    --mui-radius:10px;
+    --mui-radius-sm:8px;
+    --mui-primary:#1976d2;
+    --mui-primary-600:#1565c0;
+    --mui-success:#2e7d32;
+    --mui-success-600:#1b5e20;
+    --mui-border:#e0e3e7;
+    --mui-text:#111;
+    --mui-muted:#6b7280;
+    --mui-bg:#fff;
+    --mui-shadow:0 1px 2px rgba(0,0,0,.06), 0 1px 3px rgba(0,0,0,.04);
+    --mui-focus:0 0 0 3px rgba(25,118,210,.18);
+  }
+
+  /* scope everything to the capture view */
+  #view-capture{
+    --pad:10px;
+    color:var(--mui-text);
+  }
+
+  /* cards / sections */
+  #view-capture .grid-sec > div,
+  #view-capture .card{
+    background:var(--mui-bg);
+    border:1px solid var(--mui-border);
+    border-radius:var(--mui-radius);
+    box-shadow:var(--mui-shadow);
+  }
+
+  /* labels */
+  #view-capture .row label{
+    color:#334155;           /* slightly darker than before */
+    font-weight:600;
+    font-size:13px;
+  }
+
+  /* inputs + textareas (existing markup) */
+  #view-capture input[type="text"],
+  #view-capture textarea{
+    border:1px solid #cfd4dc;
+    background:#fff;
+    border-radius:var(--mui-radius-sm);
+    padding:8px 10px;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  #view-capture input[type="text"]:focus,
+  #view-capture textarea:focus{
+    outline:none;
+    border-color:var(--mui-primary);
+    box-shadow:var(--mui-focus);
+  }
+
+  /* hidden postdate/contacts/deadlines inputs remain hidden; previews styled below */
+
+  /* primary/positive buttons (existing ids) */
+  #cap-capture{
+    background:var(--mui-primary);
+    color:#fff;
+    border:1px solid var(--mui-primary);
+    border-radius:var(--mui-radius-sm);
+    padding:8px 12px;
+    box-shadow:var(--mui-shadow);
+  }
+  #cap-capture:hover{ background:var(--mui-primary-600); border-color:var(--mui-primary-600); }
+
+  #cap-save{
+    background:var(--mui-success);
+    color:#fff;
+    border:1px solid var(--mui-success);
+    border-radius:var(--mui-radius-sm);
+    padding:8px 12px;
+    box-shadow:var(--mui-shadow);
+  }
+  #cap-save:hover{ background:var(--mui-success-600); border-color:var(--mui-success-600); }
+  #cap-save[disabled]{ opacity:.5; cursor:not-allowed; }
+
+  /* status text */
+  #cap-status{
+    margin:0;
+    color:var(--mui-muted);
+    font-size:12px;
+  }
+
+  /* --- Contacts editor (dynamic DOM from capture.js) --- */
+  #cap-contacts-editor{
+    /* border:1px solid var(--mui-border); */
+    /* border-radius:var(--mui-radius); */
+    padding:8px;
+    background:#fff;
+    box-shadow:var(--mui-shadow);
+  }
+  #cap-contacts-editor input[type="text"]{
+    border:1px solid #cfd4dc;
+    border-radius:var(--mui-radius-sm);
+    padding:3px 8px;
+  }
+  #cap-contacts-editor input[type="text"]:focus{
+    border-color:var(--mui-primary);
+    box-shadow:var(--mui-focus);
+    outline:none;
+  }
+  #cap-contacts-editor button{
+    border:1px solid var(--mui-border);
+    background:#fff;
+    border-radius:999px;
+    padding:3px 10px;
+    cursor:pointer;
+    box-shadow:var(--mui-shadow);
+  }
+  #cap-contacts-editor button:hover{ background:#f6f8fb; }
+  #cap-contacts-rows > div{   /* each dynamic row */
+    background:#fafbfc;
+    /* border:1px solid #eef1f4;
+    border-radius:var(--mui-radius-sm); */
+    padding:3px;
+  }
+
+  /* --- Deadlines editor (dynamic DOM from capture.js) --- */
+  #cap-deadlines-editor{
+    /* border:1px solid var(--mui-border); */
+    /* border-radius:var(--mui-radius); */
+    padding:8px;
+    background:#fff;
+    box-shadow:var(--mui-shadow);
+  }
+  #cap-deadlines-editor input[type="datetime-local"],
+  #cap-deadlines-editor input[type="text"],
+  #cap-deadlines-editor select{
+    border:1px solid #cfd4dc;
+    border-radius:var(--mui-radius-sm);
+    padding:6px 8px;
+  }
+  #cap-deadlines-editor select{
+    background:#fff;
+  }
+  #cap-deadlines-editor input:focus,
+  #cap-deadlines-editor select:focus{
+    border-color:var(--mui-primary);
+    box-shadow:var(--mui-focus);
+    outline:none;
+  }
+  #cap-deadlines-editor button{
+    border:1px solid var(--mui-border);
+    background:#fff;
+    border-radius:999px;
+    padding:3px 10px;
+    cursor:pointer;
+    box-shadow:var(--mui-shadow);
+  }
+  #cap-deadlines-editor button:hover{ background:#f6f8fb; }
+  #cap-deadlines-rows > div{
+    background:#fafbfc;
+    /* border:1px solid #eef1f4;
+    border-radius:var(--mui-radius-sm); */
+    padding:3px;
+  }
+
+  /* misc polish */
+  #view-capture .container_row{ gap:16px; }
+  #view-capture h4{
+    font-weight:700;
+    color:#0f172a;
+    margin:8px 0 6px;
+  }
+  #view-capture textarea::placeholder,
+  #view-capture input::placeholder{ color:#9aa4b2; }
