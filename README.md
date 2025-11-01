@@ -1,4 +1,4 @@
-**Testing Instructiions**
+## **Testing Instructions**
 
 Once the repo is downloaded, the app can be built locally using either npm run dev (root directory) or npm run build (dist directory).
 
@@ -8,7 +8,7 @@ The application contains a mechanism for the graceful download of additional pac
 
 If the tester does want for any reason to package the application, the pem key has been provided in the repo.
 
-**END USER LICENSE AGREEMENT (EULA)**
+## **END USER LICENSE AGREEMENT (EULA)**
 *Last updated: 11-1-2025*
 
 This Software is licensed, not sold. By installing or using the Software, you agree to the terms below.
